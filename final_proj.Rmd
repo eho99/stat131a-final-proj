@@ -1,0 +1,19 @@
+---
+title: "STAT 131A Final Project"
+authors: "Eric Ho and Joseph Gitlin"
+output: html_notebook
+---
+
+```{r installing packages} 
+pkgTest <- function(x) {
+  if (!require(x,character.only = TRUE)) {
+    install.packages(x,dep=TRUE)
+    if(!require(x,character.only = TRUE)) stop("Package not found")
+  }
+}
+
+packages = c("tidyverse")
+lapply(packages, pkgTest)
+
+library(tidyverse)
+```
