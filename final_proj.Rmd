@@ -12,8 +12,46 @@ pkgTest <- function(x) {
   }
 }
 
-packages = c("tidyverse")
-lapply(packages, pkgTest)
+packages = c("tidyverse", "patchwork")
+loading <- lapply(packages, pkgTest)
 
 library(tidyverse)
+library(patchwork)
 ```
+
+
+```{r 2a reading data} 
+cholangitis <- read.csv("cholangitis-data.csv")
+
+cat_vars <- c("status", "drug", "sex", "ascites", "hepatomegaly", "spiders", "edema", "stage")
+
+cholangitis[, cat_vars] <- lapply(cholangitis[, cat_vars], factor)
+head(data)
+```
+
+Through exploratory data analysis (EDA), we're looking to identify trends or potential relationships between variables, whether it is independent variables with other independent variables, or more likely, independent variables to the final status. 
+
+```{r status histogram}
+hist_status <- ggplot(cholangitis, aes(x=status, color=factor(status), fill=factor(status))) +
+  geom_bar()
+
+hist_status
+```
+
+```{r}
+mosaicplot(status~drug, cholangitis)
+```
+
+```{r continuous}
+chol_continuous <- select(cholangitis, -all_of(cat_vars))
+
+pairs(chol_continuous)
+```
+
+
+
+
+
+
+
+
