@@ -4,6 +4,11 @@ authors: "Eric Ho and Joseph Gitlin"
 output: html_notebook
 ---
 
+```{r}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=60), tidy=TRUE)
+```
+
+
 ```{r installing packages} 
 pkgTest <- function(x) {
   if (!require(x,character.only = TRUE)) {
@@ -19,6 +24,7 @@ library(tidyverse)
 library(patchwork)
 ```
 
+### Question 2a: Reading Data
 
 ```{r 2a reading data} 
 cholangitis <- read.csv("cholangitis-data.csv")
@@ -26,21 +32,79 @@ cholangitis <- read.csv("cholangitis-data.csv")
 cat_vars <- c("status", "drug", "sex", "ascites", "hepatomegaly", "spiders", "edema", "stage")
 
 cholangitis[, cat_vars] <- lapply(cholangitis[, cat_vars], factor)
-head(data)
+cholangitis[, "age"] <- cholangitis[, "age"] / 365 # converting from days to years
+head(cholangitis)
 ```
+
+### Question 2b: EDA
 
 Through exploratory data analysis (EDA), we're looking to identify trends or potential relationships between variables, whether it is independent variables with other independent variables, or more likely, independent variables to the final status. 
 
 ```{r status histogram}
-hist_status <- ggplot(cholangitis, aes(x=status, color=factor(status), fill=factor(status))) +
-  geom_bar()
+status_bar <- ggplot(cholangitis, aes(x=status, color=factor(status), fill=factor(status))) +
+  geom_bar() +
+  theme(legend.position="none")
 
-hist_status
+sex_bar <- ggplot(cholangitis, aes(x=sex, color=factor(sex), fill=factor(sex))) +
+  geom_bar() + 
+  theme(legend.position="none")
+
+stage_bar <- ggplot(cholangitis, aes(x=stage, color=factor(stage), fill=factor(stage))) +
+  geom_bar() + 
+  theme(legend.position="none")
+
+age_hist <- ggplot(cholangitis, aes(x=age)) +
+  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8)
+
+n_days_hist <- ggplot(cholangitis, aes(x=n_days)) +
+  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8)
+
+status_bar + age_hist + n_days_hist + sex_bar + stage_bar
 ```
+
+When looking at the bar plots and histogram of the status, age, and sex respectively, we notice that a majority of the patients survived following the treatments, however there is a significant number of deaths as well. The patients who received transplants (denoted by CL) are not accurate representatives of the data or the subject of this trial and also should be dropped when analyzing the data. 
+
+Age is widely distributed but most concentrated in the 50s. 
+
+With regards to the n_days variable, there is a larger concentration between the 1000 and 2000 day mark which can either be attributed to more patients dying during that time or the study ending early. This can be explored further through a visualization relating the number of days with the status of the patient (see below).
+
+There are a significant number of female patients compared to male patients which is something to note about this data--any results or predictions are likely to be more accurate for women than men. 
+
+It looks like this drug trial happened with patients mostly in stage 3 or stage 4. This is likely because patients did not catch the diagnoses earlier in the stage of the disease. 
+
+```{r n_days and status}
+ggplot(cholangitis, aes(x=status, y=n_days)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2)
+```
+From this boxplot, the median date for patients who died is around 1000, while the median release time for patients who survived was close to 2000 days. This coincides with the histogram previously seen and suggests that a large number of patients will survive at least 1000 days. 
+
 
 ```{r}
-mosaicplot(status~drug, cholangitis)
+mosaicplot(drug~status, cholangitis)
 ```
+Based on this mosaic plot, the ratio of people who received the placebo that survived is higher than those who received the trial drug. 
+
+```{r medical indicators bar plot} 
+ascites_bar <- ggplot(cholangitis, aes(x=ascites, color=factor(ascites), fill=factor(ascites))) +
+  geom_bar() + 
+  theme(legend.position="none")
+
+hepatomegaly_bar <- ggplot(cholangitis, aes(x=hepatomegaly, color=factor(hepatomegaly), fill=factor(hepatomegaly))) +
+  geom_bar() + 
+  theme(legend.position="none")
+
+spiders_bar <- ggplot(cholangitis, aes(x=spiders, color=factor(spiders), fill=factor(spiders))) +
+  geom_bar() + 
+  theme(legend.position="none")
+
+edema_bar <- ggplot(cholangitis, aes(x=edema, color=factor(edema), fill=factor(edema))) +
+  geom_bar() + 
+  theme(legend.position="none")
+
+ascites_bar + hepatomegaly_bar + spiders_bar + edema_bar
+```
+Based on these plots, a majority of the patients did not have a presence of spider angiomas or ascites. There was essentially an even balance of patients who had and did not have hepatomegaly. A majority of patients did not have edema nor have diuretic therapy.
+
 
 ```{r continuous}
 chol_continuous <- select(cholangitis, -all_of(cat_vars))
@@ -49,9 +113,17 @@ pairs(chol_continuous)
 ```
 
 
+### Question 3: Multivariate Regression
+
+```{r prepping data}
+cholangitis_clean <- cholangitis %>% 
+  subset(status != "CL")
+  
+```
 
 
-
-
+```{r only continuous}
+continuous_fit <- lm(n_days ~ ., chol_continuous)
+```
 
 
