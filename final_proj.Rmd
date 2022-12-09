@@ -1,7 +1,9 @@
 ---
 title: "STAT 131A Final Project"
-authors: "Eric Ho and Joseph Gitlin"
-output: html_notebook
+authors: Eric Ho and Joseph Gitlin
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 ```{r}
@@ -17,11 +19,12 @@ pkgTest <- function(x) {
   }
 }
 
-packages = c("tidyverse", "patchwork")
+packages = c("tidyverse", "patchwork", "olsrr")
 loading <- lapply(packages, pkgTest)
 
 library(tidyverse)
 library(patchwork)
+library(olsrr)
 ```
 
 ### Question 2a: Reading Data
@@ -119,11 +122,40 @@ pairs(chol_continuous)
 cholangitis_clean <- cholangitis %>% 
   subset(status != "CL")
   
+chol_continuous <- chol_continuous %>% 
+  subset(status != "CL")
 ```
 
+Explain: why consider drug/sex/status, not useful/feasible 
+Before performing regression analysis on the data, we want to first clean and remove any extraneous data which would not add value. First, the patients who received a liver transplant can be dropped from the data as they do not accurately represent the rest of the patients or our target patients. 
 
 ```{r only continuous}
 continuous_fit <- lm(n_days ~ ., chol_continuous)
+# summary(continuous_fit)
+
+fit <- lm(n_days ~ . - id - drug - status, cholangitis_clean)
+# status, sex, age, stage
+summary(fit)
 ```
 
+```{r olsrr}
+step_model <- ols_step_forward_p(fit)
+step_model
+```
 
+```{r fitted plot} 
+covariates <- step_model$predictors
+step_fit <- lm(n_days ~ ., cholangitis_clean[, c("n_days", covariates)])
+summary(step_fit)
+```
+
+```{r diagnostic plots}
+res <- resid(step_fit)
+plot(res)
+abline(0, 0)
+
+qqnorm(res)
+qqline(res)
+```
+
+The residual plot and qq plot give us an indication on the distribution the residuals. Based 
