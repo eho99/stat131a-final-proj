@@ -108,6 +108,14 @@ ascites_bar + hepatomegaly_bar + spiders_bar + edema_bar
 ```
 Based on these plots, a majority of the patients did not have a presence of spider angiomas or ascites. There was essentially an even balance of patients who had and did not have hepatomegaly. A majority of patients did not have edema nor have diuretic therapy.
 
+```{r categorical to n_days}
+par(mfrow=c(1,4))
+plot(cholangitis[,"status"], cholangitis[,"n_days"])
+plot(cholangitis[,"sex"], cholangitis[,"n_days"])
+plot(cholangitis[,"stage"], cholangitis[,"n_days"])
+plot(cholangitis[,"age"], cholangitis[,"n_days"])
+```
+We transformed the covariates because we had to plot the number of days, a numeric variable, on the y-axis against the covariates, categorical variables that acted as the independent variables, on the x-axis. We've included the plots of n_days against each categorical variable to preface the regression run on n_days correlating to all of the categorical variables shown in a linear model. We believe that showing the individual plots in addition to the regression analysis of n_days correlated to all categorical variables would paint a more complete picture of just how n_days can be modeled and linked/related to the categorical variables in the dataset.
 
 ```{r continuous}
 chol_continuous <- select(cholangitis, -all_of(cat_vars))
@@ -131,11 +139,13 @@ Before performing regression analysis on the data, we want to first clean and re
 
 ```{r only continuous}
 continuous_fit <- lm(n_days ~ ., chol_continuous)
-# summary(continuous_fit)
+summary(continuous_fit)
 
 fit <- lm(n_days ~ . - id - drug - status, cholangitis_clean)
-# status, sex, age, stage
 summary(fit)
+
+responseModel <- lm(n_days ~ status + sex + stage + age, cholangitis_clean)
+summary(responseModel)
 ```
 
 ```{r olsrr}
