@@ -46,21 +46,26 @@ Through exploratory data analysis (EDA), we're looking to identify trends or pot
 ```{r status histogram}
 status_bar <- ggplot(cholangitis, aes(x=status, color=factor(status), fill=factor(status))) +
   geom_bar() +
-  theme(legend.position="none")
+  theme(legend.position="none") + 
+  labs(title = "Barplot of status")
 
 sex_bar <- ggplot(cholangitis, aes(x=sex, color=factor(sex), fill=factor(sex))) +
   geom_bar() + 
-  theme(legend.position="none")
+  theme(legend.position="none") +
+  labs(title = "Barplot of Sex")
 
 stage_bar <- ggplot(cholangitis, aes(x=stage, color=factor(stage), fill=factor(stage))) +
   geom_bar() + 
-  theme(legend.position="none")
+  theme(legend.position="none") +
+  labs(title = "Bar Plot of Disease Status")
 
 age_hist <- ggplot(cholangitis, aes(x=age)) +
-  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8)
+  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
+  labs(title = "Histogram of Age")
 
 n_days_hist <- ggplot(cholangitis, aes(x=n_days)) +
-  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8)
+  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
+  labs(title = "Histogram of N_Days")
 
 status_bar + age_hist + n_days_hist + sex_bar + stage_bar
 ```
@@ -77,7 +82,8 @@ It looks like this drug trial happened with patients mostly in stage 3 or stage 
 
 ```{r n_days and status}
 ggplot(cholangitis, aes(x=status, y=n_days)) + 
-    geom_boxplot(fill="slateblue", alpha=0.2)
+    geom_boxplot(fill="slateblue", alpha=0.2) +
+  labs(title = "Box Plot of N_Days against disease status")
 ```
 From this boxplot, the median date for patients who died is around 1000, while the median release time for patients who survived was close to 2000 days. This coincides with the histogram previously seen and suggests that a large number of patients will survive at least 1000 days. 
 
@@ -85,35 +91,42 @@ From this boxplot, the median date for patients who died is around 1000, while t
 ```{r}
 mosaicplot(drug~status, cholangitis)
 ```
-Based on this mosaic plot, the ratio of people who received the placebo that survived is higher than those who received the trial drug. 
+Based on this mosaic plot, the ratio of people who received the placebo that survived is higher than those who received the trial drug, but they are relatively close. This suggests that the drug did not have a great impact on the outcome of the patient across all dimensions. 
 
 ```{r medical indicators bar plot} 
 ascites_bar <- ggplot(cholangitis, aes(x=ascites, color=factor(ascites), fill=factor(ascites))) +
   geom_bar() + 
-  theme(legend.position="none")
+  theme(legend.position="none") +
+  labs(title = "Bar Plot of prescence of Ascites")
 
 hepatomegaly_bar <- ggplot(cholangitis, aes(x=hepatomegaly, color=factor(hepatomegaly), fill=factor(hepatomegaly))) +
   geom_bar() + 
-  theme(legend.position="none")
+  theme(legend.position="none") +
+  labs(title = "Bar Plot of prescence of Hepatomegaly")
 
 spiders_bar <- ggplot(cholangitis, aes(x=spiders, color=factor(spiders), fill=factor(spiders))) +
   geom_bar() + 
-  theme(legend.position="none")
+  theme(legend.position="none") +
+  labs(title = "Bar Plot of prescence of Spider angiomas")
 
 edema_bar <- ggplot(cholangitis, aes(x=edema, color=factor(edema), fill=factor(edema))) +
   geom_bar() + 
-  theme(legend.position="none")
+  theme(legend.position="none") +
+  labs(title = "Bar Plot of Prescence of Edema")
 
 ascites_bar + hepatomegaly_bar + spiders_bar + edema_bar
 ```
 Based on these plots, a majority of the patients did not have a presence of spider angiomas or ascites. There was essentially an even balance of patients who had and did not have hepatomegaly. A majority of patients did not have edema nor have diuretic therapy.
 
-```{r categorical to n_days}
-par(mfrow=c(1,4))
-plot(cholangitis[,"status"], cholangitis[,"n_days"])
-plot(cholangitis[,"sex"], cholangitis[,"n_days"])
-plot(cholangitis[,"stage"], cholangitis[,"n_days"])
-plot(cholangitis[,"age"], cholangitis[,"n_days"])
+```{r barplots against n_days}
+par(mfrow=c(1, 2))
+plot(cholangitis[,"status"], cholangitis[,"n_days"], main="Bar plot of n_days against status", xlab="status", ylab="n_days")
+plot(cholangitis[,"sex"], cholangitis[,"n_days"], main="Bar plot of n_days against sex", xlab="status", ylab="n_days")
+```
+```{r more plots against n_days}
+par(mfrow=c(1, 2))
+plot(cholangitis[,"stage"], cholangitis[,"n_days"], main="Bar plot of n_days against stage", xlab="status", ylab="n_days")
+plot(cholangitis[,"age"], cholangitis[,"n_days"], main="Scatterplot plot of n_days against age", xlab="status", ylab="n_days")
 ```
 We transformed the covariates because we had to plot the number of days, a numeric variable, on the y-axis against the covariates, categorical variables that acted as the independent variables, on the x-axis. We've included the plots of n_days against each categorical variable to preface the regression run on n_days correlating to all of the categorical variables shown in a linear model. We believe that showing the individual plots in addition to the regression analysis of n_days correlated to all categorical variables would paint a more complete picture of just how n_days can be modeled and linked/related to the categorical variables in the dataset.
 
@@ -134,8 +147,11 @@ chol_continuous <- chol_continuous %>%
   subset(status != "CL")
 ```
 
-Explain: why consider drug/sex/status, not useful/feasible 
-Before performing regression analysis on the data, we want to first clean and remove any extraneous data which would not add value. First, the patients who received a liver transplant can be dropped from the data as they do not accurately represent the rest of the patients or our target patients. 
+Before performing regression analysis on the data, we want to first clean and remove any extraneous data which would not add value. First, the patients who received a liver transplant can be dropped from the data as they do not accurately represent the rest of the patients or our target patients.
+
+Another important aspect to consider will be which variables are important to our data. In particular, the id variable adds no value as it just assigns a number to each patient, as if indexing them. This does not contribute to the prediction of the number of days, our predictor, and this can be excluded. 
+
+Based on the mosiac plot seen in the EDA, it seems as though the drug does not have much of an impact as well. Finally, the status of an individual cannot be known until they are discharged from the study, at which point the number of days they survived is also known. Because of this redundancy, they can both be removed. 
 
 ```{r only continuous}
 continuous_fit <- lm(n_days ~ ., chol_continuous)
@@ -147,6 +163,8 @@ summary(fit)
 responseModel <- lm(n_days ~ status + sex + stage + age, cholangitis_clean)
 summary(responseModel)
 ```
+
+Seen above is the output for 
 
 ```{r olsrr}
 step_model <- ols_step_forward_p(fit)
