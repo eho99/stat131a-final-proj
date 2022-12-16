@@ -1,9 +1,7 @@
 ---
 title: "STAT 131A Final Project"
-authors: Eric Ho and Joseph Gitlin
-output:
-  pdf_document: default
-  html_notebook: default
+authors: "Eric Ho and Joseph Gitlin"
+output: html_notebook
 ---
 
 ```{r}
@@ -18,10 +16,8 @@ pkgTest <- function(x) {
     if(!require(x,character.only = TRUE)) stop("Package not found")
   }
 }
-
-packages = c("tidyverse", "patchwork", "olsrr")
+packages = c("tidyverse", "patchwork")
 loading <- lapply(packages, pkgTest)
-
 library(tidyverse)
 library(patchwork)
 library(olsrr)
@@ -31,9 +27,7 @@ library(olsrr)
 
 ```{r 2a reading data} 
 cholangitis <- read.csv("cholangitis-data.csv")
-
 cat_vars <- c("status", "drug", "sex", "ascites", "hepatomegaly", "spiders", "edema", "stage")
-
 cholangitis[, cat_vars] <- lapply(cholangitis[, cat_vars], factor)
 cholangitis[, "age"] <- cholangitis[, "age"] / 365 # converting from days to years
 head(cholangitis)
@@ -46,26 +40,21 @@ Through exploratory data analysis (EDA), we're looking to identify trends or pot
 ```{r status histogram}
 status_bar <- ggplot(cholangitis, aes(x=status, color=factor(status), fill=factor(status))) +
   geom_bar() +
-  theme(legend.position="none") + 
-  labs(title = "Barplot of status")
+  theme(legend.position="none")
 
 sex_bar <- ggplot(cholangitis, aes(x=sex, color=factor(sex), fill=factor(sex))) +
   geom_bar() + 
-  theme(legend.position="none") +
-  labs(title = "Barplot of Sex")
+  theme(legend.position="none")
 
 stage_bar <- ggplot(cholangitis, aes(x=stage, color=factor(stage), fill=factor(stage))) +
   geom_bar() + 
-  theme(legend.position="none") +
-  labs(title = "Bar Plot of Disease Status")
+  theme(legend.position="none")
 
 age_hist <- ggplot(cholangitis, aes(x=age)) +
-  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
-  labs(title = "Histogram of Age")
+  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8)
 
 n_days_hist <- ggplot(cholangitis, aes(x=n_days)) +
-  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
-  labs(title = "Histogram of N_Days")
+  geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8)
 
 status_bar + age_hist + n_days_hist + sex_bar + stage_bar
 ```
@@ -82,8 +71,7 @@ It looks like this drug trial happened with patients mostly in stage 3 or stage 
 
 ```{r n_days and status}
 ggplot(cholangitis, aes(x=status, y=n_days)) + 
-    geom_boxplot(fill="slateblue", alpha=0.2) +
-  labs(title = "Box Plot of N_Days against disease status")
+    geom_boxplot(fill="slateblue", alpha=0.2)
 ```
 From this boxplot, the median date for patients who died is around 1000, while the median release time for patients who survived was close to 2000 days. This coincides with the histogram previously seen and suggests that a large number of patients will survive at least 1000 days. 
 
@@ -91,28 +79,22 @@ From this boxplot, the median date for patients who died is around 1000, while t
 ```{r}
 mosaicplot(drug~status, cholangitis)
 ```
-Based on this mosaic plot, the ratio of people who received the placebo that survived is higher than those who received the trial drug, but they are relatively close. This suggests that the drug did not have a great impact on the outcome of the patient across all dimensions. 
+Based on this mosaic plot, the ratio of people who received the placebo that survived is higher than those who received the trial drug. 
 
 ```{r medical indicators bar plot} 
 ascites_bar <- ggplot(cholangitis, aes(x=ascites, color=factor(ascites), fill=factor(ascites))) +
   geom_bar() + 
-  theme(legend.position="none") +
-  labs(title = "Bar Plot of prescence of Ascites")
+  theme(legend.position="none")
 
-hepatomegaly_bar <- ggplot(cholangitis, aes(x=hepatomegaly, color=factor(hepatomegaly), fill=factor(hepatomegaly))) +
-  geom_bar() + 
-  theme(legend.position="none") +
-  labs(title = "Bar Plot of prescence of Hepatomegaly")
+hepatomegaly_bar <- ggplot(cholangitis, aes(x=hepatomegaly, color=factor(hepatomegaly), fill=factor(hepatomegaly))) + geom_bar() + theme(legend.position="none")
 
 spiders_bar <- ggplot(cholangitis, aes(x=spiders, color=factor(spiders), fill=factor(spiders))) +
   geom_bar() + 
-  theme(legend.position="none") +
-  labs(title = "Bar Plot of prescence of Spider angiomas")
+  theme(legend.position="none")
 
 edema_bar <- ggplot(cholangitis, aes(x=edema, color=factor(edema), fill=factor(edema))) +
   geom_bar() + 
-  theme(legend.position="none") +
-  labs(title = "Bar Plot of Prescence of Edema")
+  theme(legend.position="none")
 
 ascites_bar + hepatomegaly_bar + spiders_bar + edema_bar
 ```
@@ -130,42 +112,88 @@ plot(cholangitis[,"age"], cholangitis[,"n_days"], main="Scatterplot plot of n_da
 ```
 We transformed the covariates because we had to plot the number of days, a numeric variable, on the y-axis against the covariates, categorical variables that acted as the independent variables, on the x-axis. We've included the plots of n_days against each categorical variable to preface the regression run on n_days correlating to all of the categorical variables shown in a linear model. We believe that showing the individual plots in addition to the regression analysis of n_days correlated to all categorical variables would paint a more complete picture of just how n_days can be modeled and linked/related to the categorical variables in the dataset.
 
+
 ```{r continuous}
 chol_continuous <- select(cholangitis, -all_of(cat_vars))
-
 pairs(chol_continuous)
 ```
+```{r more continuous EDA}
+par(mfrow=c(1,2))
+plot(chol_continuous$age, chol_continuous$n_days, main = "n_days vs. age", xlab = "age", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$age))
+plot(chol_continuous$bilirubin, chol_continuous$n_days, main = "n_days vs. bilirubin", xlab = "bilirubin", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$bilirubin))
+```
+```{r more continuous EDA part 2}
+par(mfrow=c(1,2))
+plot(chol_continuous$cholesterol, chol_continuous$n_days, main = "n_days vs. cholesterol", xlab = "cholesterol", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$cholesterol))
+plot(chol_continuous$albumin, chol_continuous$n_days, main = "n_days vs. albumin", xlab = "albumin", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$albumin))
+```
+```{r more continuous EDA part 3}
+par(mfrow=c(1,2))
+plot(chol_continuous$copper, chol_continuous$n_days, main = "n_days vs. copper", xlab = "copper", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$copper))
+plot(chol_continuous$alk_phos, chol_continuous$n_days, main = "n_days vs. alk_phos", xlab = "alk_phos", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$alk_phos))
+```
+```{r more continuous EDA part 4}
+par(mfrow=c(1,2))
+plot(chol_continuous$sgot, chol_continuous$n_days, main = "n_days vs. sgot", xlab = "sgot", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$sgot))
+plot(chol_continuous$tryglicerides, chol_continuous$n_days, main = "n_days vs. tryglicerides", xlab = "tryglicerides", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$tryglicerides))
+```
+```{r more continuous EDA part 5}
+par(mfrow=c(1,2))
+plot(chol_continuous$platelets, chol_continuous$n_days, main = "n_days vs. platelets", xlab = "platelets", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$platelets))
+plot(chol_continuous$prothrombin, chol_continuous$n_days, main = "n_days vs. prothrombin", xlab = "prothrombin", ylab = "n_days")
+abline(lm(chol_continuous$n_days ~ chol_continuous$prothrombin))
+```
+Albumin and Platelets seem to be the only two continuous explanatory variables that change at least moderately from the time of registration to the final day recorded. Most of the points in most of the graphs are clustered at the left edge, indicating that there was little change in the continuous explanatory variable from the time of registration to the final day recorded. Only Albumin and Platelets seemed to increase with more/higher n_days.
 
+```{r more continuous EDA part 6}
+par(mfrow = c(2, 5))
+hist(chol_continuous$age, freq = FALSE, main = "Age Histogram", xlab = "Age")
+hist(chol_continuous$bilirubin, freq = FALSE, main = "Bilirubin Histogram", xlab = "Bilirubin")
+hist(chol_continuous$cholesterol, freq = FALSE, main = "Cholesterol Histogram", xlab = "Cholesterol")
+hist(chol_continuous$albumin, freq = FALSE, main = "Albumin Histogram", xlab = "Albumin")
+hist(chol_continuous$copper, freq = FALSE, main = "Copper Histogram", xlab = "Copper")
+hist(chol_continuous$alk_phos, freq = FALSE, main = "Alk_Phos Histogram", xlab = "Alk_Phos")
+hist(chol_continuous$sgot, freq = FALSE, main = "Sgot Histogram", xlab = "Sgot")
+hist(chol_continuous$tryglicerides, freq = FALSE, main = "Tryglicerides Histogram", xlab = "Tryglicerides")
+hist(chol_continuous$platelets, freq = FALSE, main = "Platelets Histogram", xlab = "Platelets")
+hist(chol_continuous$prothrombin, freq = FALSE, main = "Prothrombin Histogram", xlab = "Prothrombin")
+```
+We see from the histograms that Age is roughly normal as expected, Albumin has a slight left skew, Platelets has a slight right skew, and every other explanatory variable has a strong right skew. There's a heavier concentration of lower values for most of the explanatory variables except for Platelets and Albumin. So from start to finish of the treatment period, since Albumin and Platelets are less skewed, the mean is closer to the median than it is in the other explanatory variables, meaning that those two variables change more during the period than the other variables do.
 
 ### Question 3: Multivariate Regression
 
 ```{r prepping data}
 cholangitis_clean <- cholangitis %>% 
   subset(status != "CL")
-  
-chol_continuous <- chol_continuous %>% 
-  subset(status != "CL")
 ```
-
 Before performing regression analysis on the data, we want to first clean and remove any extraneous data which would not add value. First, the patients who received a liver transplant can be dropped from the data as they do not accurately represent the rest of the patients or our target patients.
 
 Another important aspect to consider will be which variables are important to our data. In particular, the id variable adds no value as it just assigns a number to each patient, as if indexing them. This does not contribute to the prediction of the number of days, our predictor, and this can be excluded. 
 
-Based on the mosiac plot seen in the EDA, it seems as though the drug does not have much of an impact as well. Finally, the status of an individual cannot be known until they are discharged from the study, at which point the number of days they survived is also known. Because of this redundancy, they can both be removed. 
+Based on the mosiac plot seen in the EDA, it seems as though the drug does not have much of an impact as well. Finally, the status of an individual cannot be known until they are discharged from the study, at which point the number of days they survived is also known. Because of this redundancy, they can both be removed.
+
 
 ```{r only continuous}
 continuous_fit <- lm(n_days ~ ., chol_continuous)
 summary(continuous_fit)
-
 fit <- lm(n_days ~ . - id - drug - status, cholangitis_clean)
 summary(fit)
-
 responseModel <- lm(n_days ~ status + sex + stage + age, cholangitis_clean)
 summary(responseModel)
 ```
 
-Seen above is the output for 
+Seen above is the output for
 
+###Question 3b: Variable Selection
 ```{r olsrr}
 step_model <- ols_step_forward_p(fit)
 step_model
@@ -177,11 +205,11 @@ step_fit <- lm(n_days ~ ., cholangitis_clean[, c("n_days", covariates)])
 summary(step_fit)
 ```
 
+###Question 3c: Regression Diagnostics
 ```{r diagnostic plots}
 res <- resid(step_fit)
 plot(res)
 abline(0, 0)
-
 qqnorm(res)
 qqline(res)
 ```
