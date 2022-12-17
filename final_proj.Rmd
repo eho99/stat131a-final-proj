@@ -1,7 +1,9 @@
 ---
 title: "STAT 131A Final Project"
-authors: "Eric Ho and Joseph Gitlin"
-output: html_notebook
+author: "Eric Ho and Joseph Gitlin"
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 ```{r}
@@ -152,7 +154,7 @@ abline(lm(chol_continuous$n_days ~ chol_continuous$platelets))
 plot(chol_continuous$prothrombin, chol_continuous$n_days, main = "n_days vs. prothrombin", xlab = "prothrombin", ylab = "n_days")
 abline(lm(chol_continuous$n_days ~ chol_continuous$prothrombin))
 ```
-Albumin and Platelets seem to be the only two continuous explanatory variables that change at least moderately from the time of registration to the final day recorded. Most of the points in most of the graphs are clustered at the left edge, indicating that there was little change in the continuous explanatory variable from the time of registration to the final day recorded. Only Albumin and Platelets seemed to increase with more/higher n_days.
+Explanations for scatter plots: Albumin and Platelets seem to be the only two continuous explanatory variables that change at least moderately from the time of registration to the final day recorded. Most of the points in most of the graphs are clustered at the left edge, indicating that there was little change in the continuous explanatory variable from the time of registration to the final day recorded. Only Albumin and Platelets seemed to increase with more/higher n_days.
 
 ```{r more continuous EDA part 6}
 par(mfrow = c(2, 5))
@@ -182,22 +184,28 @@ Another important aspect to consider will be which variables are important to ou
 Based on the mosiac plot seen in the EDA, it seems as though the drug does not have much of an impact as well. Finally, the status of an individual cannot be known until they are discharged from the study, at which point the number of days they survived is also known. Because of this redundancy, they can both be removed.
 
 
+In making a model, looking at different combinations of explanatory variables is useful to gauge different fits. Below are three models, one of all the continuous variables, one of all variables except drugs and status, and the last is looking at the status, sex, stage, and age. 
+
 ```{r only continuous}
-continuous_fit <- lm(n_days ~ ., chol_continuous)
+continuous_fit <- lm(n_days ~ . - id, chol_continuous)
 summary(continuous_fit)
+
 fit <- lm(n_days ~ . - id - drug - status, cholangitis_clean)
 summary(fit)
+
 responseModel <- lm(n_days ~ status + sex + stage + age, cholangitis_clean)
 summary(responseModel)
 ```
 
-Seen above is the output for
+Looking at the residuals, all of them are quite spread out suggesting that the models are not performing the greatest, or that our dataset is not as conducive to linear models as seen through the less linear pattern of the continuous variables. The median closest to zero can be seen in the model taking into account more explanatory variables.
 
 ###Question 3b: Variable Selection
 ```{r olsrr}
 step_model <- ols_step_forward_p(fit)
 step_model
 ```
+
+Utilizing the olsrr package, we can perform stepwise regression on the model containing all of the varaibles to determine the ideal composition of variables from the dataset. The metrics R-Squared, Adj. R-Squared, AIC, C(p), and RMSE. The stepwise regression model is selected by choosing to include and exclude variables in subsequent steps and calculating the metrics for the model. The olsrr package simplifies this to easily output the variables for the ideal model. 
 
 ```{r fitted plot} 
 covariates <- step_model$predictors
@@ -206,6 +214,7 @@ summary(step_fit)
 ```
 
 ###Question 3c: Regression Diagnostics
+
 ```{r diagnostic plots}
 res <- resid(step_fit)
 plot(res)
@@ -214,4 +223,4 @@ qqnorm(res)
 qqline(res)
 ```
 
-The residual plot and qq plot give us an indication on the distribution the residuals. Based 
+The residual plot and qq plot give us an indication on the distribution the residuals. This plot shows that the residuals deviate somewhat from the normal distribution. Judging from the EDA previously, we saw that there was not a large number of continuous variables which had linear relationships which suggests that the linear assumption of regression is violated. Furthermore, the R-Squared and Adj. R-Squared value is low which indicates that the fit for the model on n_days is not very good. Polynomial regression or some model would likely fit better with the data. 
